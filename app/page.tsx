@@ -1,14 +1,13 @@
 "use client";
 import React, { useState, useEffect } from "react";
 import {
-  Coffee,
   Pause,
   Play,
   Settings,
   Home,
   AlertCircle,
-  StopCircle,
 } from "lucide-react";
+import Image from "next/image";
 
 export default function CoffeeMakerApp() {
   const [page, setPage] = useState("home");
@@ -456,7 +455,7 @@ export default function CoffeeMakerApp() {
         <div className="bg-gradient-to-b from-amber-50 to-yellow-50 rounded-3xl shadow-2xl overflow-hidden backdrop-blur-sm border border-amber-200">
           <div className="bg-gradient-to-r from-amber-900 to-amber-800 p-8 text-center">
             <div className="flex flex-col items-center justify-center gap-2 mb-2">
-              <Coffee className="w-12 h-12 text-yellow-300" />
+              <Image src="/smartBrewLogo.webp" alt="logo" width={128} height={128} draggable={false}/>
               <h1 className="text-3xl font-bold text-white">Smart Brew</h1>
             </div>
             <p className="text-amber-100 text-sm">Your perfect cup awaits</p>
@@ -516,6 +515,7 @@ export default function CoffeeMakerApp() {
             {/* Status Display */}
             {isBrewing && (
               <div className="text-center space-y-3">
+                <video src="Coffee.mp4" autoPlay loop muted/>
                 <p className="text-amber-900 font-semibold text-lg">
                   Brewing in progress
                 </p>
