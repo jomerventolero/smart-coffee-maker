@@ -667,7 +667,7 @@ export default function CoffeeMakerApp() {
               </div>
             )}
 
-            {/* Settings Button */}
+            {/* Settings Button 
             <button
               onClick={() => setPage("config")}
               className="w-full py-3 rounded-xl font-semibold bg-amber-200 text-amber-900 hover:bg-amber-300 transition-all transform hover:scale-105 active:scale-95 flex items-center justify-center gap-2"
@@ -675,8 +675,8 @@ export default function CoffeeMakerApp() {
               <Settings className="w-5 h-5" />
               Configuration
             </button>
+            */}
           </div>
-
           {/* Footer */}
           <div className="bg-amber-100 px-8 py-4 text-center text-xs text-amber-800 border-t border-amber-200">
             ☕ Handcrafted with ❤️ for coffee lovers
