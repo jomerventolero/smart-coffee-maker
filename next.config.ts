@@ -1,12 +1,22 @@
-import type { NextConfig } from "next";
+/** @type {import('next').NextConfig} */
+const nextConfig = {
+  // ✅ Enables static export
+  output: 'export',
 
-const nextConfig: NextConfig = {
-  // Configure trailing slashes for better S3 compatibility
+  // ✅ Required for static hosting
+  images: { unoptimized: true },
+
+  // ✅ Keeps URLs consistent for Android or file:// usage
   trailingSlash: true,
-  
-  // Ensure proper asset handling
-  assetPrefix: process.env.NODE_ENV === 'production' ? process.env.ASSET_PREFIX || '' : '',
+
+  // ✅ Asset prefix fix for static export
+  // Must start with a slash, NOT './'
+  assetPrefix: process.env.NODE_ENV === 'production' ? '/' : undefined,
+
+  // Optional environment variables
+  env: {
+    NEXT_PUBLIC_API_URL: process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000',
+  },
 };
 
 export default nextConfig;
-

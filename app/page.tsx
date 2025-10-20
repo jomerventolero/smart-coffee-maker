@@ -13,7 +13,7 @@ export default function CoffeeMakerApp() {
   const [ledColor, setLedColor] = useState("red");
   const [message, setMessage] = useState("");
   const [loading, setLoading] = useState(false);
-  const [espIP, setEspIP] = useState("");
+  const [espIP, setEspIP] = useState("http://192.168.18.78");
   const [signal, setSignal] = useState("");
   const [connected, setConnected] = useState("");
 
@@ -30,7 +30,7 @@ export default function CoffeeMakerApp() {
   const [configMessage, setConfigMessage] = useState("");
 
   // Use Next.js API proxy instead of direct ESP32 access
-  const API_URL = "/api/esp";
+  const API_URL = espIP;
 
   // helper function
   function formatTime(seconds: number) {
@@ -376,7 +376,7 @@ export default function CoffeeMakerApp() {
                   type="number"
                   min="180"
                   max="1800"
-                  value={config.maxBrewTime}
+                  value={600}
                   onChange={(e) =>
                     setConfig({
                       ...config,
@@ -660,7 +660,7 @@ export default function CoffeeMakerApp() {
             <div className="flex items-center justify-center gap-2 p-3 bg-amber-100 rounded-lg">
               <div
                 className={`w-3 h-3 rounded-full ${
-                  relayState === "OFF" ? "bg-gray-400" : "bg-green-600"
+                  relayState === "OFF" ? "bg-green-600" : "bg-gray-400"
                 }`}
               ></div>
               <span className="text-sm text-amber-900 font-medium">
@@ -668,11 +668,11 @@ export default function CoffeeMakerApp() {
                 <span
                   className={
                     relayState === "OFF"
-                      ? "text-gray-600 font-bold"
-                      : "text-green-700"
+                      ? "text-green-700 font-bold"
+                      : "text-gray-600"
                   }
                 >
-                  {relayState === "ON" ? "OFF" : "ON"}
+                  {relayState === "ON" ? "ON" : "OFF"}
                 </span>
               </span>
             </div>
