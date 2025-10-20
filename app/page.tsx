@@ -32,6 +32,14 @@ export default function CoffeeMakerApp() {
   // Use Next.js API proxy instead of direct ESP32 access
   const API_URL = "/api/esp";
 
+  // helper function
+  function formatTime(seconds: number) {
+    if (!Number.isFinite(seconds) || seconds < 0) return "0:00";
+    const m = Math.floor(seconds / 60);
+    const s = seconds % 60;
+    return `${m}:${String(s).padStart(2, "0")}`;
+  }  
+
   // Load config on mount
   useEffect(() => {
     const loadConfig = async () => {
@@ -39,7 +47,30 @@ export default function CoffeeMakerApp() {
         const res = await fetch(`${API_URL}/config`);
         if (res.ok) {
           const data = await res.json();
-          setConfig(data);
+  
+          // Normalize values: convert ms → sec and ensure numbers
+          const normalized = {
+            brew200Duration: Math.floor(Number(data.brew200Duration || 165000) / 1000),
+            brew400Duration: Math.floor(Number(data.brew400Duration || 330000) / 1000),
+            brew600Duration: Math.floor(Number(data.brew600Duration || 495000) / 1000),
+          };
+
+          setConfig({
+            brew200Duration: normalized.brew200Duration,
+            brew400Duration: normalized.brew400Duration,
+            brew600Duration: normalized.brew600Duration,
+            maxBrewTime: Math.floor(Number(data.maxBrewTime || 600000) / 1000),
+            relayPin: Number(data.relayPin || 5),
+            ledPin: Number(data.ledPin || 16),
+          });
+          console.log("Loaded Config:", {
+            brew200Duration: normalized.brew200Duration,
+            brew400Duration: normalized.brew400Duration,
+            brew600Duration: normalized.brew600Duration,
+            maxBrewTime: Math.floor(Number(data.maxBrewTime || 600000) / 1000),
+            relayPin: Number(data.relayPin || 5),
+            ledPin: Number(data.ledPin || 16),
+          });
         }
       } catch (err) {
         console.error("Config load failed:", err);
@@ -47,6 +78,7 @@ export default function CoffeeMakerApp() {
     };
     loadConfig();
   }, [espIP]);
+  
 
   // Poll status
   useEffect(() => {
@@ -67,14 +99,21 @@ export default function CoffeeMakerApp() {
         }
 
         if (data.isBrewing) {
-          const progress = (data.elapsedMs / data.totalDurationMs) * 100;
-          setBrewProgress(Math.min(progress, 100));
-          setRemainingTime(Math.ceil(data.remainingMs / 1000));
-          setTotalTime(Math.ceil(data.totalDurationMs / 1000));
+          const elapsed = Number(data.elapsedMs) || 0;
+          const total = Number(data.totalDurationMs) || 1; // avoid divide by zero
+          const remaining = Number(data.remainingMs) || 0;
+        
+          const progress = Math.min((elapsed / total) * 100, 100);
+        
+          setBrewProgress(progress);
+          setRemainingTime(Math.ceil(remaining / 1000));
+          setTotalTime(Math.ceil(total / 1000));
         } else {
           setBrewProgress(0);
           setRemainingTime(0);
+          setTotalTime(0);
         }
+               
       } catch (err) {
         console.error("Status fetch failed:", err);
       }
@@ -197,8 +236,10 @@ export default function CoffeeMakerApp() {
     setEspIP("http://192.168.18.78");
   };
 
-  const minutes = Math.floor(remainingTime / 60);
-  const seconds = remainingTime % 60;
+  const safeRemaining = Number.isFinite(remainingTime) ? remainingTime : 0;
+  const minutes = Math.floor(safeRemaining / 60);
+  const seconds = safeRemaining % 60;
+
 
   if (page === "config") {
     return (
@@ -260,9 +301,14 @@ export default function CoffeeMakerApp() {
                   className="w-full px-4 py-2 border-2 border-amber-300 rounded-lg focus:outline-none focus:border-amber-600 bg-white text-amber-800"
                 />
                 <p className="text-xs text-amber-700">
-                  ~{Math.floor(config.brew200Duration / 60)}:
-                  {String(config.brew200Duration % 60).padStart(2, "0")}
+                  ~
+                  {config.brew200Duration
+                    ? `${Math.floor(config.brew200Duration / 60)}:${String(
+                        config.brew200Duration % 60
+                      ).padStart(2, "0")}`
+                    : "0:00"}
                 </p>
+
               </div>
 
               {/* Brew 400mL Duration */}
@@ -284,8 +330,12 @@ export default function CoffeeMakerApp() {
                   className="w-full px-4 py-2 border-2 border-amber-300 rounded-lg focus:outline-none focus:border-amber-600 bg-white text-amber-800"
                 />
                 <p className="text-xs text-amber-700">
-                  ~{Math.floor(config.brew400Duration / 60)}:
-                  {String(config.brew400Duration % 60).padStart(2, "0")}
+                  ~
+                  {config.brew400Duration
+                    ? `${Math.floor(config.brew400Duration / 60)}:${String(
+                        config.brew400Duration % 60
+                      ).padStart(2, "0")}`
+                    : "0:00"}
                 </p>
               </div>
 
@@ -308,8 +358,12 @@ export default function CoffeeMakerApp() {
                   className="w-full px-4 py-2 border-2 border-amber-300 rounded-lg focus:outline-none focus:border-amber-600 bg-white text-amber-800"
                 />
                 <p className="text-xs text-amber-700">
-                  ~{Math.floor(config.brew600Duration / 60)}:
-                  {String(config.brew600Duration % 60).padStart(2, "0")}
+                  ~
+                  {config.brew600Duration
+                    ? `${Math.floor(config.brew600Duration / 60)}:${String(
+                        config.brew600Duration % 60
+                      ).padStart(2, "0")}`
+                    : "0:00"}
                 </p>
               </div>
 
@@ -332,8 +386,12 @@ export default function CoffeeMakerApp() {
                   className="w-full px-4 py-2 border-2 border-amber-300 rounded-lg focus:outline-none focus:border-amber-600 bg-white text-amber-800"
                 />
                 <p className="text-xs text-amber-700">
-                  Safety limit - ~{Math.floor(config.maxBrewTime / 60)}:
-                  {String(config.maxBrewTime % 60).padStart(2, "0")}
+                  ~
+                  {config.maxBrewTime
+                    ? `${Math.floor(config.maxBrewTime / 60)}:${String(
+                        config.maxBrewTime % 60
+                      ).padStart(2, "0")}`
+                    : "0:00"}
                 </p>
               </div>
 
@@ -358,7 +416,7 @@ export default function CoffeeMakerApp() {
                 <p className="text-xs text-amber-700">GPIO{config.relayPin}</p>
               </div>
 
-              {/* LED Pin */}
+              {/* LED Pin 
               <div className="space-y-2">
                 <label className="block text-sm font-semibold text-amber-900">
                   LED GPIO Pin
@@ -378,6 +436,7 @@ export default function CoffeeMakerApp() {
                 />
                 <p className="text-xs text-amber-700">GPIO{config.ledPin}</p>
               </div>
+              */}
 
               {/* Info Box */}
               <div className="bg-amber-100 border-l-4 border-amber-600 p-3 rounded">
@@ -540,6 +599,7 @@ export default function CoffeeMakerApp() {
                   {String(minutes).padStart(2, "0")}:
                   {String(seconds).padStart(2, "0")}
                 </div>
+                {/**
                 <div className="w-full bg-amber-200 rounded-full h-2 overflow-hidden">
                   <div
                     className="bg-gradient-to-r from-amber-500 to-amber-700 h-full transition-all duration-500 rounded-full"
@@ -549,12 +609,14 @@ export default function CoffeeMakerApp() {
                 <p className="text-sm text-amber-700">
                   {Math.round(brewProgress)}% complete
                 </p>
+                 */}
               </div>
             )}
 
             {!isBrewing && (
               <div className="text-center space-y-4">
                 <p className="text-amber-900 font-semibold">Select Volume</p>
+
                 <div className="grid grid-cols-3 gap-3">
                   {[200, 400, 600].map((vol) => (
                     <button
@@ -570,48 +632,47 @@ export default function CoffeeMakerApp() {
                     </button>
                   ))}
                 </div>
+
                 <p className="text-xs text-amber-700">
-                  {volume === 200
-                    ? `☕ Short brew ~${Math.floor(
-                        config.brew200Duration / 60
-                      )}:${String(config.brew200Duration % 60).padStart(
-                        2,
-                        "0"
-                      )}`
-                    : volume === 400
-                    ? `☕☕ Medium brew ~${Math.floor(
-                        config.brew400Duration / 60
-                      )}:${String(config.brew400Duration % 60).padStart(
-                        2,
-                        "0"
-                      )}`
-                    : `☕☕☕ Large brew ~${Math.floor(
-                        config.brew600Duration / 60
-                      )}:${String(config.brew600Duration % 60).padStart(
-                        2,
-                        "0"
-                      )}`}
+                  {(() => {
+                    const getDuration = (sec: number) => {
+                      if (!sec || isNaN(sec)) return "0:00";
+                      const min = Math.floor(sec / 60);
+                      const s = sec % 60;
+                      return `${min}:${String(s).padStart(2, "0")}`;
+                    };
+
+                    if (volume === 200)
+                      return `☕ Short brew ~${getDuration(Number(config.brew200Duration))}`;
+                    if (volume === 400)
+                      return `☕☕ Medium brew ~${getDuration(Number(config.brew400Duration))}`;
+                    if (volume === 600)
+                      return `☕☕☕ Large brew ~${getDuration(Number(config.brew600Duration))}`;
+                    return "☕ Select a brew volume";
+                  })()}
                 </p>
               </div>
             )}
+
+
 
             {/* Relay Status */}
             <div className="flex items-center justify-center gap-2 p-3 bg-amber-100 rounded-lg">
               <div
                 className={`w-3 h-3 rounded-full ${
-                  relayState !== "ON" ? "bg-green-600" : "bg-gray-400"
+                  relayState === "OFF" ? "bg-gray-400" : "bg-green-600"
                 }`}
               ></div>
               <span className="text-sm text-amber-900 font-medium">
                 Relay:{" "}
                 <span
                   className={
-                    relayState !== "ON"
-                      ? "text-green-700 font-bold"
-                      : "text-gray-600"
+                    relayState === "OFF"
+                      ? "text-gray-600 font-bold"
+                      : "text-green-700"
                   }
                 >
-                  {relayState !== "ON" ? "ON" : "OFF"}
+                  {relayState === "ON" ? "OFF" : "ON"}
                 </span>
               </span>
             </div>
