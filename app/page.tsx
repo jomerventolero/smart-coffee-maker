@@ -1,6 +1,6 @@
 "use client";
 import React, { useState, useEffect } from "react";
-import { Coffee, Pause, Play, Settings, Home, AlertCircle } from "lucide-react";
+import { Coffee, Pause, Play, Settings, Home, AlertCircle, Wifi, Signal } from "lucide-react";
 
 export default function CoffeeMakerApp() {
   const [page, setPage] = useState("home");
@@ -14,6 +14,8 @@ export default function CoffeeMakerApp() {
   const [message, setMessage] = useState("");
   const [loading, setLoading] = useState(false);
   const [espIP, setEspIP] = useState("");
+  const [signal, setSignal] = useState("");
+  const [connected, setConnected] = useState("");
 
   // Config state
   const [config, setConfig] = useState({
@@ -54,6 +56,8 @@ export default function CoffeeMakerApp() {
         const data = await res.json();
         setIsBrewing(data.isBrewing);
         setRelayState(data.relayState);
+        setSignal(data.signal);
+        setConnected(data.connected);
 
         // Update LED color based on brewing state
         if (data.isBrewing) {
@@ -230,7 +234,7 @@ export default function CoffeeMakerApp() {
                   value={espIP}
                   onChange={(e) => setEspIP(e.target.value)}
                   placeholder="http://192.168.18.78"
-                  className="w-full px-4 py-2 border-2 border-amber-300 rounded-lg focus:outline-none focus:border-amber-600 bg-white"
+                  className="w-full px-4 py-2 border-2 border-amber-300 rounded-lg focus:outline-none focus:border-amber-600 bg-white text-amber-800"
                 />
                 <p className="text-xs text-amber-700">
                   Enter the full address with http:// protocol
@@ -253,7 +257,7 @@ export default function CoffeeMakerApp() {
                       brew200Duration: parseInt(e.target.value) || 0,
                     })
                   }
-                  className="w-full px-4 py-2 border-2 border-amber-300 rounded-lg focus:outline-none focus:border-amber-600 bg-white"
+                  className="w-full px-4 py-2 border-2 border-amber-300 rounded-lg focus:outline-none focus:border-amber-600 bg-white text-amber-800"
                 />
                 <p className="text-xs text-amber-700">
                   ~{Math.floor(config.brew200Duration / 60)}:
@@ -277,7 +281,7 @@ export default function CoffeeMakerApp() {
                       brew400Duration: parseInt(e.target.value) || 0,
                     })
                   }
-                  className="w-full px-4 py-2 border-2 border-amber-300 rounded-lg focus:outline-none focus:border-amber-600 bg-white"
+                  className="w-full px-4 py-2 border-2 border-amber-300 rounded-lg focus:outline-none focus:border-amber-600 bg-white text-amber-800"
                 />
                 <p className="text-xs text-amber-700">
                   ~{Math.floor(config.brew400Duration / 60)}:
@@ -301,7 +305,7 @@ export default function CoffeeMakerApp() {
                       brew600Duration: parseInt(e.target.value) || 0,
                     })
                   }
-                  className="w-full px-4 py-2 border-2 border-amber-300 rounded-lg focus:outline-none focus:border-amber-600 bg-white"
+                  className="w-full px-4 py-2 border-2 border-amber-300 rounded-lg focus:outline-none focus:border-amber-600 bg-white text-amber-800"
                 />
                 <p className="text-xs text-amber-700">
                   ~{Math.floor(config.brew600Duration / 60)}:
@@ -325,7 +329,7 @@ export default function CoffeeMakerApp() {
                       maxBrewTime: parseInt(e.target.value) || 0,
                     })
                   }
-                  className="w-full px-4 py-2 border-2 border-amber-300 rounded-lg focus:outline-none focus:border-amber-600 bg-white"
+                  className="w-full px-4 py-2 border-2 border-amber-300 rounded-lg focus:outline-none focus:border-amber-600 bg-white text-amber-800"
                 />
                 <p className="text-xs text-amber-700">
                   Safety limit - ~{Math.floor(config.maxBrewTime / 60)}:
@@ -342,14 +346,14 @@ export default function CoffeeMakerApp() {
                   type="number"
                   min="0"
                   max="39"
-                  value={config.relayPin}
+                  value={config.relayPin || 5}
                   onChange={(e) =>
                     setConfig({
                       ...config,
                       relayPin: parseInt(e.target.value) || 0,
                     })
                   }
-                  className="w-full px-4 py-2 border-2 border-amber-300 rounded-lg focus:outline-none focus:border-amber-600 bg-white"
+                  className="w-full px-4 py-2 border-2 border-amber-300 rounded-lg focus:outline-none focus:border-amber-600 bg-white text-amber-800"
                 />
                 <p className="text-xs text-amber-700">GPIO{config.relayPin}</p>
               </div>
@@ -363,14 +367,14 @@ export default function CoffeeMakerApp() {
                   type="number"
                   min="0"
                   max="39"
-                  value={config.ledPin}
+                  value={config.ledPin || 16}
                   onChange={(e) =>
                     setConfig({
                       ...config,
                       ledPin: parseInt(e.target.value) || 0,
                     })
                   }
-                  className="w-full px-4 py-2 border-2 border-amber-300 rounded-lg focus:outline-none focus:border-amber-600 bg-white"
+                  className="w-full px-4 py-2 border-2 border-amber-300 rounded-lg focus:outline-none focus:border-amber-600 bg-white text-amber-800"
                 />
                 <p className="text-xs text-amber-700">GPIO{config.ledPin}</p>
               </div>
@@ -475,16 +479,14 @@ export default function CoffeeMakerApp() {
           {/* Main Content */}
           <div className="p-8 space-y-8">
             {/* LED Status Indicator */}
-            <div className="flex justify-center">
-              <div
-                className={`w-8 h-8 rounded-full shadow-lg transition-all ${
-                  ledColor === "green"
-                    ? "bg-green-500 animate-pulse"
-                    : "bg-red-500"
-                } ring-4 ${
-                  ledColor === "green" ? "ring-green-300" : "ring-red-300"
-                }`}
-              ></div>
+            <div className="flex flex-row justify-center gap-5 items-center">
+              <div className="text-amber-900 flex flex-row gap-4 justify-center items-center border-[1px] border-amber-900 p-4 rounded-lg">
+                Connected: <Wifi className={`${connected ? "text-green-600" : "text-amber-800"}`}/>
+              </div>
+              <div className="text-amber-900 flex flex-row gap-4 justify-center items-center border-[1px] border-amber-900 p-4 rounded-lg">
+                <Signal className={`${connected ? "text-green-600" : "text-amber-800"}`}/>
+                {signal}
+              </div>
             </div>
 
             {/* Coffee Cup Animation */}
@@ -667,7 +669,7 @@ export default function CoffeeMakerApp() {
               </div>
             )}
 
-            {/* Settings Button 
+            {/* Settings Button */}
             <button
               onClick={() => setPage("config")}
               className="w-full py-3 rounded-xl font-semibold bg-amber-200 text-amber-900 hover:bg-amber-300 transition-all transform hover:scale-105 active:scale-95 flex items-center justify-center gap-2"
@@ -675,7 +677,8 @@ export default function CoffeeMakerApp() {
               <Settings className="w-5 h-5" />
               Configuration
             </button>
-            */}
+            
+            
           </div>
           {/* Footer */}
           <div className="bg-amber-100 px-8 py-4 text-center text-xs text-amber-800 border-t border-amber-200">
